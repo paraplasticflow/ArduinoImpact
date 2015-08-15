@@ -7,14 +7,17 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.Set;
@@ -22,29 +25,37 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
-    BluetoothSocket mmSocket;
+    BluetoothConnector.BluetoothSocketWrapper mmSocket;
     BluetoothDevice mmDevice = null;
     BluetoothAdapter mmAdapter;
     BluetoothConnector btcon;
+    OutputStream mmOs;
+    InputStream mmIs;
 
-    final byte delimiter = 33;
+    //final byte delimiter = 33;
     int readBufferPosition = 0;
+    volatile boolean stopWorker;
+    byte[] readBuffer;
+    Thread workerThread;
+
 
     public void sendBtMsg(String msg2send){
         try {
 
-            BluetoothConnector.BluetoothSocketWrapper socket = btcon.connect();
+            //mmSocket = btcon.connect();
+
+
             String msg = msg2send;
-            OutputStream os = socket.getOutputStream();
-            os.write(msg.getBytes());
-            try {
+            //OutputStream os = mmSocket.getOutputStream();
+            mmOs.write(msg.getBytes());
+            /*try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }
-            os.flush();
-            os.close();
-            btcon.bluetoothSocket.close();
+            }*/
+            //mmOs.flush();
+            //os.close();
+            //btcon.bluetoothSocket.close();
 
         }
         catch (IOException e) {
@@ -57,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Button pauseButton = (Button) findViewById(R.id.pauseBT);
 
         BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
         if (blueAdapter != null) {
@@ -71,13 +84,21 @@ public class MainActivity extends AppCompatActivity {
         }
         mmAdapter = blueAdapter;
         btcon = new BluetoothConnector(mmDevice, false, mmAdapter, null);
+        try {
+            mmSocket = btcon.connect();
+            mmOs = mmSocket.getOutputStream();
+            mmIs = mmSocket.getInputStream();
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
     public void startRestartGame(View v)
     {
         //check bluetooth connection - to implement
-        sendBtMsg("start");
+        sendBtMsg("1");
         /*Button startRestartBT = (Button)findViewById(R.id.startBT);
         String state = startRestartBT.getText().toString();
         if(state.equals("Start"))
@@ -89,13 +110,74 @@ public class MainActivity extends AppCompatActivity {
     public void pauseContinueGame(View v)
     {
         //check game state - tom implement
-        sendBtMsg("pause");
-       /* Button pauseContinueBT = (Button)findViewById(R.id.pauseBT);
+
+        //sendBtMsg("0");
+        /*Button pauseContinueBT = (Button)findViewById(R.id.pauseBT);
         String state = pauseContinueBT.getText().toString();
         if(state.equals("Pause"))
             pauseContinueBT.setText("Continue");
         else
             pauseContinueBT.setText("Pause");*/
+        beginListenForData();
+
+    }
+
+    void beginListenForData()
+    {
+        final Handler handler = new Handler();
+        final byte delimiter = 33; //This is the ASCII code for a newline character
+
+        stopWorker = false;
+        readBufferPosition = 0;
+        readBuffer = new byte[1024];
+        workerThread = new Thread(new Runnable()
+        {
+            public void run()
+            {
+                while(!Thread.currentThread().isInterrupted() && !stopWorker)
+                {
+                    try
+                    {
+                        int bytesAvailable = mmIs.available();
+                        if(bytesAvailable > 0)
+                        {
+                            byte[] packetBytes = new byte[bytesAvailable];
+                            mmIs.read(packetBytes);
+                            for(int i=0;i<bytesAvailable;i++)
+                            {
+                                byte b = packetBytes[i];
+                                if(b == delimiter)
+                                {
+                                    byte[] encodedBytes = new byte[readBufferPosition];
+                                    System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.length);
+                                    final String data = new String(encodedBytes, "US-ASCII");
+                                    readBufferPosition = 0;
+
+                                    handler.post(new Runnable()
+                                    {
+                                        public void run()
+                                        {
+                                            TextView myLabel = (TextView) findViewById(R.id.scoreLB);
+                                            myLabel.setText(data);
+                                        }
+                                    });
+                                }
+                                else
+                                {
+                                    readBuffer[readBufferPosition++] = b;
+                                }
+                            }
+                        }
+                    }
+                    catch (IOException ex)
+                    {
+                        stopWorker = true;
+                    }
+                }
+            }
+        });
+
+        workerThread.start();
     }
 
     @Override

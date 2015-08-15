@@ -114,6 +114,8 @@ public class BluetoothConnector {
 
         BluetoothSocket getUnderlyingSocket();
 
+        boolean isConnected();
+
     }
 
 
@@ -123,6 +125,11 @@ public class BluetoothConnector {
 
         public NativeBluetoothSocket(BluetoothSocket tmp) {
             this.socket = tmp;
+        }
+
+        @Override
+        public boolean isConnected() {
+            return socket.isConnected();
         }
 
         @Override
