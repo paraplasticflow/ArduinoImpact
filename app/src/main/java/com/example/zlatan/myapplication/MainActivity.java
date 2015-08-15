@@ -1,15 +1,19 @@
 package com.example.zlatan.myapplication;
 
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -23,9 +27,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends ActionBarActivity {
 
-    BluetoothConnector.BluetoothSocketWrapper mmSocket;
+    BluetoothConnector.BluetoothSocketWrapper mmSocket = null;
     BluetoothDevice mmDevice = null;
     BluetoothAdapter mmAdapter;
     BluetoothConnector btcon;
@@ -39,138 +43,169 @@ public class MainActivity extends AppCompatActivity {
     Thread workerThread;
 
 
-    public void sendBtMsg(String msg2send){
+    public void sendBtMsg(String msg2send) {
         try {
-
-            //mmSocket = btcon.connect();
-
-
             String msg = msg2send;
-            //OutputStream os = mmSocket.getOutputStream();
             mmOs.write(msg.getBytes());
-            /*try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }*/
-            //mmOs.flush();
-            //os.close();
-            //btcon.bluetoothSocket.close();
-
         }
         catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        Button pauseButton = (Button) findViewById(R.id.pauseBT);
-
-        BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (blueAdapter != null) {
-            if (blueAdapter.isEnabled()) {
-                Set<BluetoothDevice> bondedDevices = blueAdapter.getBondedDevices();
-
-                if (bondedDevices.size() > 0) {
-                    Iterator iter = bondedDevices.iterator();
-                    mmDevice = (BluetoothDevice) iter.next();
-                }
-            }
-        }
-        mmAdapter = blueAdapter;
-        btcon = new BluetoothConnector(mmDevice, false, mmAdapter, null);
-        try {
-            mmSocket = btcon.connect();
-            mmOs = mmSocket.getOutputStream();
-            mmIs = mmSocket.getInputStream();
-        }
-        catch(IOException e) {
-            e.printStackTrace();
-        }
-
     }
 
     public void startRestartGame(View v)
     {
-        //check bluetooth connection - to implement
-        sendBtMsg("1");
-        /*Button startRestartBT = (Button)findViewById(R.id.startBT);
-        String state = startRestartBT.getText().toString();
-        if(state.equals("Start"))
-            startRestartBT.setText("Restart");
-        else
-            startRestartBT.setText("Start");*/
+        if(mmSocket != null) {
+            if(mmSocket.isConnected()) {
+                Button startRestartBT = (Button)findViewById(R.id.startBT);
+                String state = startRestartBT.getText().toString();
+                if(state.equals("Start")) {
+                    sendBtMsg("start");
+                    startRestartBT.setText("Restart");
+                    beginListenForData();
+                }
+                else {
+                    sendBtMsg("restart");
+                    startRestartBT.setText("Start");
+                }
+            }
+            else {
+                lostConnection();
+            }
+        }
+        else {
+            lostConnection();
+        }
     }
 
-    public void pauseContinueGame(View v)
-    {
-        //check game state - tom implement
-
-        //sendBtMsg("0");
-        /*Button pauseContinueBT = (Button)findViewById(R.id.pauseBT);
-        String state = pauseContinueBT.getText().toString();
-        if(state.equals("Pause"))
-            pauseContinueBT.setText("Continue");
-        else
-            pauseContinueBT.setText("Pause");*/
-        beginListenForData();
-
+    public void pauseContinueGame(View v) {
+        if(mmSocket != null) {
+            if(mmSocket.isConnected()) {
+                Button startRestartBT = (Button)findViewById(R.id.startBT);
+                String state = startRestartBT.getText().toString();
+                if(state.equals("Start")) {
+                    new AlertDialog.Builder(this)
+                            .setTitle("No active game")
+                            .setMessage("You have to start the game")
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // do nothing
+                                }
+                            })
+                            .show();
+                }
+                else {
+                    Button pauseContinueBT = (Button)findViewById(R.id.pauseBT);
+                    String state1 = pauseContinueBT.getText().toString();
+                    if(state1.equals("Pause")) {
+                        sendBtMsg("2");
+                        pauseContinueBT.setText("Continue");
+                    }
+                    else {
+                        sendBtMsg("2");
+                        pauseContinueBT.setText("Pause");
+                    }
+                }
+            }
+            else {
+                lostConnection();
+            }
+        }
+        else {
+            lostConnection();
+        }
     }
 
-    void beginListenForData()
-    {
+    public void goLeft(View v) {
+        if(mmSocket != null) {
+            if(mmSocket.isConnected()) {
+                sendBtMsg("0");
+            }
+            else {
+                lostConnection();
+            }
+        }
+        else {
+            lostConnection();
+        }
+    }
+
+    public void goRight(View v) {
+        if(mmSocket != null) {
+            if(mmSocket.isConnected()) {
+                sendBtMsg("1");
+            }
+            else {
+                lostConnection();
+            }
+        }
+        else {
+            lostConnection();
+        }
+    }
+
+    public void shoot(View v) {
+        if(mmSocket != null) {
+            if(mmSocket.isConnected()) {
+                sendBtMsg("3");
+            }
+            else {
+                lostConnection();
+            }
+        }
+        else {
+            lostConnection();
+        }
+    }
+
+    void beginListenForData() {
         final Handler handler = new Handler();
         final byte delimiter = 33; //This is the ASCII code for a newline character
 
         stopWorker = false;
         readBufferPosition = 0;
         readBuffer = new byte[1024];
-        workerThread = new Thread(new Runnable()
-        {
-            public void run()
-            {
-                while(!Thread.currentThread().isInterrupted() && !stopWorker)
-                {
-                    try
-                    {
+        workerThread = new Thread(new Runnable() {
+            public void run() {
+                while(!Thread.currentThread().isInterrupted() && !stopWorker) {
+                    try {
                         int bytesAvailable = mmIs.available();
-                        if(bytesAvailable > 0)
-                        {
+                        if(bytesAvailable > 0) {
                             byte[] packetBytes = new byte[bytesAvailable];
                             mmIs.read(packetBytes);
-                            for(int i=0;i<bytesAvailable;i++)
-                            {
+                            for(int i=0;i<bytesAvailable;i++) {
                                 byte b = packetBytes[i];
-                                if(b == delimiter)
-                                {
+                                if(b == delimiter) {
                                     byte[] encodedBytes = new byte[readBufferPosition];
                                     System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.length);
                                     final String data = new String(encodedBytes, "US-ASCII");
                                     readBufferPosition = 0;
 
-                                    handler.post(new Runnable()
-                                    {
-                                        public void run()
-                                        {
-                                            TextView myLabel = (TextView) findViewById(R.id.scoreLB);
-                                            myLabel.setText(data);
+                                    handler.post(new Runnable() {
+                                        public void run() {
+                                            if(data == "gameOver") {
+                                                finishGame();
+                                            }
+                                            else {
+                                                TextView myLabel = (TextView) findViewById(R.id.scoreLB);
+                                                myLabel.setText(data);
+                                            }
                                         }
                                     });
                                 }
-                                else
-                                {
+                                else {
                                     readBuffer[readBufferPosition++] = b;
                                 }
                             }
                         }
                     }
-                    catch (IOException ex)
-                    {
+                    catch (IOException ex) {
                         stopWorker = true;
                     }
                 }
@@ -180,26 +215,131 @@ public class MainActivity extends AppCompatActivity {
         workerThread.start();
     }
 
+    private void finishGame() {
+        Button startRestartBT = (Button)findViewById(R.id.startBT);
+        startRestartBT.setText("Start");
+        Button pauseContinueBT = (Button)findViewById(R.id.pauseBT);
+        pauseContinueBT.setText("Pause");
+
+        TextView highscoreTV = (TextView) findViewById(R.id.highscoreLB);
+        TextView scoreTV = (TextView) findViewById(R.id.scoreLB);
+        int highscore = Integer.parseInt(highscoreTV.getText().toString());
+        int score = Integer.parseInt(scoreTV.getText().toString());
+
+        String toAdd = "";
+        if(score > highscore) {
+            highscoreTV.setText(scoreTV.getText());
+            toAdd = ", a new highscore!";
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Game over")
+                .setMessage("You earned " + score + " points" + toAdd)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // do nothing
+                    }
+                })
+                .show();
+        scoreTV.setText("0");
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_activity_actions, menu);
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_connect) {
+            connectArduino();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void connectArduino() {
+        BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (blueAdapter != null) {
+            if (blueAdapter.isEnabled()) {
+                Set<BluetoothDevice> bondedDevices = blueAdapter.getBondedDevices();
+
+                if (bondedDevices.size() > 0) {
+                    Iterator iter = bondedDevices.iterator();
+                    mmDevice = (BluetoothDevice) iter.next();
+                    mmAdapter = blueAdapter;
+                    btcon = new BluetoothConnector(mmDevice, false, mmAdapter, null);
+                    try {
+                        mmSocket = btcon.connect();
+                        mmOs = mmSocket.getOutputStream();
+                        mmIs = mmSocket.getInputStream();
+                    }
+                    catch(IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else {
+                    new AlertDialog.Builder(this)
+                            .setTitle("Connection problem")
+                            .setMessage("You have to pair with Arduino first")
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // do nothing
+                                }
+                            })
+                            .setIcon(R.drawable.ic_not_paired)
+                            .show();
+                }
+            }
+            else {
+                new AlertDialog.Builder(this)
+                        .setTitle("Connection problem")
+                        .setMessage("You have to turn Bluetooth on")
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // do nothing
+                            }
+                        })
+                        .setIcon(R.drawable.ic_turned_off)
+                        .show();
+            }
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Connection success!")
+                .setMessage("Devices connected")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // do nothing
+                    }
+                })
+                .setIcon(R.drawable.ic_connected)
+                .show();
+
+    }
+
+    private void lostConnection() {
+        Button startRestartBT = (Button)findViewById(R.id.startBT);
+        startRestartBT.setText("Start");
+        Button pauseContinueBT = (Button)findViewById(R.id.pauseBT);
+        pauseContinueBT.setText("Pause");
+        TextView scoreTV = (TextView) findViewById(R.id.scoreLB);
+        scoreTV.setText("0");
+        new AlertDialog.Builder(this)
+                .setTitle("No connection!")
+                .setMessage("You have to (re)connect with Arduino!")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // do nothing
+                    }
+                })
+                .setIcon(R.drawable.ic_turned_off)
+                .show();
     }
 
 }

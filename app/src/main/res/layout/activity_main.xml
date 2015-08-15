@@ -20,7 +20,8 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:onClick="goLeft"/>
 
         <Button
             android:layout_width="fill_parent"
@@ -30,7 +31,8 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:onClick="goRight"/>
     </LinearLayout>
 
     <Button
@@ -42,7 +44,8 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_alignRight="@+id/linearLayout"
-        android:layout_alignEnd="@+id/linearLayout" />
+        android:layout_alignEnd="@+id/linearLayout"
+        android:onClick="shoot"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -81,7 +84,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="3000"
+        android:text="1000"
         android:id="@+id/scoreLB"
         android:layout_alignBottom="@+id/textView3"
         android:layout_alignParentRight="true"
