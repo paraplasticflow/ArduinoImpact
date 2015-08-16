@@ -36,12 +36,18 @@ public class MainActivity extends ActionBarActivity {
     OutputStream mmOs;
     InputStream mmIs;
 
-    //final byte delimiter = 33;
     int readBufferPosition = 0;
     volatile boolean stopWorker;
     byte[] readBuffer;
     Thread workerThread;
 
+    String command_left = "0";
+    String command_right = "1";
+    String command_pause = "2";
+    String command_continue = "3";
+    String command_start = "4";
+    String command_restart = "5";
+    String command_shoot = "6";
 
     public void sendBtMsg(String msg2send) {
         try {
@@ -66,12 +72,12 @@ public class MainActivity extends ActionBarActivity {
                 Button startRestartBT = (Button)findViewById(R.id.startBT);
                 String state = startRestartBT.getText().toString();
                 if(state.equals("Start")) {
-                    sendBtMsg("start");
+                    sendBtMsg(command_start);
                     startRestartBT.setText("Restart");
                     beginListenForData();
                 }
                 else {
-                    sendBtMsg("restart");
+                    sendBtMsg(command_restart);
                     startRestartBT.setText("Start");
                 }
             }
@@ -104,11 +110,11 @@ public class MainActivity extends ActionBarActivity {
                     Button pauseContinueBT = (Button)findViewById(R.id.pauseBT);
                     String state1 = pauseContinueBT.getText().toString();
                     if(state1.equals("Pause")) {
-                        sendBtMsg("2");
+                        sendBtMsg(command_pause);
                         pauseContinueBT.setText("Continue");
                     }
                     else {
-                        sendBtMsg("2");
+                        sendBtMsg(command_continue);
                         pauseContinueBT.setText("Pause");
                     }
                 }
@@ -125,7 +131,7 @@ public class MainActivity extends ActionBarActivity {
     public void goLeft(View v) {
         if(mmSocket != null) {
             if(mmSocket.isConnected()) {
-                sendBtMsg("0");
+                sendBtMsg(command_left);
             }
             else {
                 lostConnection();
@@ -139,7 +145,7 @@ public class MainActivity extends ActionBarActivity {
     public void goRight(View v) {
         if(mmSocket != null) {
             if(mmSocket.isConnected()) {
-                sendBtMsg("1");
+                sendBtMsg(command_right);
             }
             else {
                 lostConnection();
@@ -153,7 +159,7 @@ public class MainActivity extends ActionBarActivity {
     public void shoot(View v) {
         if(mmSocket != null) {
             if(mmSocket.isConnected()) {
-                sendBtMsg("3");
+                sendBtMsg(command_shoot);
             }
             else {
                 lostConnection();
@@ -166,7 +172,7 @@ public class MainActivity extends ActionBarActivity {
 
     void beginListenForData() {
         final Handler handler = new Handler();
-        final byte delimiter = 33; //This is the ASCII code for a newline character
+        final byte delimiter = 33; //ASCII code for a exclamation mark character
 
         stopWorker = false;
         readBufferPosition = 0;
@@ -193,8 +199,14 @@ public class MainActivity extends ActionBarActivity {
                                                 finishGame();
                                             }
                                             else {
-                                                TextView myLabel = (TextView) findViewById(R.id.scoreLB);
-                                                myLabel.setText(data);
+                                                try {
+                                                    int a = Integer.parseInt(data);
+                                                    TextView myLabel = (TextView) findViewById(R.id.scoreLB);
+                                                    myLabel.setText(data);
+                                                }
+                                                catch(NumberFormatException e) {
+                                                    // do nothing
+                                                }
                                             }
                                         }
                                     });
