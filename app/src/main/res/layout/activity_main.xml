@@ -62,7 +62,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="5000"
+        android:text="0"
         android:id="@+id/highscoreLB"
         android:layout_alignBottom="@+id/textView"
         android:layout_alignParentRight="true"
@@ -78,13 +78,15 @@
         android:layout_above="@+id/textView"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:padding="7dp"/>
+        android:padding="7dp"
+        android:layout_toLeftOf="@+id/highscoreLB"
+        android:layout_toStartOf="@+id/highscoreLB" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="1000"
+        android:text="0"
         android:id="@+id/scoreLB"
         android:layout_alignBottom="@+id/textView3"
         android:layout_alignParentRight="true"

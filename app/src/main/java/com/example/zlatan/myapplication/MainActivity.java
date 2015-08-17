@@ -78,7 +78,9 @@ public class MainActivity extends ActionBarActivity {
                 }
                 else {
                     sendBtMsg(command_restart);
-                    startRestartBT.setText("Start");
+                    startRestartBT.setText("Restart");
+                    Button pauseContinueBT = (Button)findViewById(R.id.pauseBT);
+                    pauseContinueBT.setText("Pause");
                 }
             }
             else {
@@ -195,14 +197,16 @@ public class MainActivity extends ActionBarActivity {
 
                                     handler.post(new Runnable() {
                                         public void run() {
-                                            if(data == "gameOver") {
+                                            //TextView myLabel = (TextView) findViewById(R.id.textView3);
+                                            //myLabel.setText(data);
+                                            if(data.equals("G")) {
                                                 finishGame();
                                             }
                                             else {
                                                 try {
                                                     int a = Integer.parseInt(data);
-                                                    TextView myLabel = (TextView) findViewById(R.id.scoreLB);
-                                                    myLabel.setText(data);
+                                                    TextView myLabel1 = (TextView) findViewById(R.id.scoreLB);
+                                                    myLabel1.setText(data);
                                                 }
                                                 catch(NumberFormatException e) {
                                                     // do nothing
