@@ -280,6 +280,7 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void connectArduino() {
+        boolean connected = false;
         BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
         if (blueAdapter != null) {
             if (blueAdapter.isEnabled()) {
@@ -294,6 +295,7 @@ public class MainActivity extends ActionBarActivity {
                         mmSocket = btcon.connect();
                         mmOs = mmSocket.getOutputStream();
                         mmIs = mmSocket.getInputStream();
+                        connected = true;
                     }
                     catch(IOException e) {
                         e.printStackTrace();
@@ -326,16 +328,17 @@ public class MainActivity extends ActionBarActivity {
             }
         }
 
-        new AlertDialog.Builder(this)
-                .setTitle("Connection success!")
-                .setMessage("Devices connected")
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        // do nothing
-                    }
-                })
-                .setIcon(R.drawable.ic_connected)
-                .show();
+        if(connected)
+            new AlertDialog.Builder(this)
+                    .setTitle("Connection success!")
+                    .setMessage("Devices connected")
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            // do nothing
+                        }
+                    })
+                    .setIcon(R.drawable.ic_connected)
+                    .show();
 
     }
 
