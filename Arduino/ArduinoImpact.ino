@@ -3,6 +3,7 @@
 #include <SoftwareSerial.h>// import the serial library
 
 #include <SPI.h>
+#include <stdlib.h> 
 #include "OliLedMatrixRGB.h"
 
 #define _left '0'
@@ -36,6 +37,8 @@ byte levelCounter = 0;
 int score = 0;
 byte level = 0;
 
+int offbeat = 0;
+
 
 struct Point {
   byte x = 0;
@@ -49,8 +52,67 @@ Point player;
 
 bool pause = false;
 
-void startGame()
+void printNumber(int n) {
+  ledMatrix.setColor(Red);
+  ledMatrix.clear();
+  //delay(1);
+  //ledMatrix.display();
+  int i = 0;
+  if(n == 3) {
+    for(i = 1; i < 7; i++)
+      ledMatrix.drawPixel(i, 1);
+    ledMatrix.drawPixel(5, 2);
+    ledMatrix.drawPixel(4, 3);
+    ledMatrix.drawPixel(5, 3);
+    ledMatrix.drawPixel(6, 3);
+    ledMatrix.drawPixel(6, 4);
+    ledMatrix.drawPixel(6, 5);
+    ledMatrix.drawPixel(5, 6);
+    ledMatrix.drawPixel(4, 6);
+    ledMatrix.drawPixel(3, 6);
+    ledMatrix.drawPixel(2, 6);
+    ledMatrix.drawPixel(1, 6);
+  }
+  else if(n == 2) {
+    ledMatrix.drawPixel(1, 2);
+    ledMatrix.drawPixel(2, 1);
+    ledMatrix.drawPixel(3, 1);
+    ledMatrix.drawPixel(4, 1);
+    ledMatrix.drawPixel(5, 2);
+    ledMatrix.drawPixel(4, 3);
+    ledMatrix.drawPixel(3, 4);
+    ledMatrix.drawPixel(2, 5);
+    for(i = 1; i < 7; i++)
+      ledMatrix.drawPixel(i, 6);
+  }
+  else if(n == 1) {
+    ledMatrix.drawPixel(2, 3);
+    ledMatrix.drawPixel(3, 2);
+    ledMatrix.drawPixel(4, 1);
+    for(i = 2; i < 7; i++)
+      ledMatrix.drawPixel(4, i);
+  }
+  else {
+    
+  }
+  ledMatrix.display();
+}
+
+void startGame(int n)
 {
+  offbeat = 0;
+  if(n == 1) {
+    pause = true;
+    ledMatrix.clear();
+    ledMatrix.display();
+  }
+  printNumber(3);
+  delay(1000);
+  printNumber(2);
+  delay(1000);
+  printNumber(1);
+  delay(1000);
+  
   pause = false;
   level = 0;
   score = 0;
@@ -59,7 +121,7 @@ void startGame()
   delay(1);
   ledMatrix.display();
 
-  player.x = 2;
+  player.x = 0;
   player.y = 7;
   ledMatrix.setColor(Green);
   ledMatrix.display();
@@ -86,9 +148,9 @@ void startGame()
   //ledMatrix.drawPixel(enemies[2].x, enemies[2].y);
   //ledMatrix.drawPixel(enemies[0].x, enemies[0].y);
   //ledMatrix.drawPixel(bullets[3].x, bullets[3].y);
-  makeEnemy(2, 0);
-  makeEnemy(0, 0);
-  makeBullet(2);
+  //makeEnemy(2, 0);
+  //makeEnemy(0, 0);
+  //makeBullet(2);
   ledMatrix.display();
 }
 
@@ -127,7 +189,7 @@ void masterControl()
         makeEnemy(enemies[index].x, 0);
     spawningCounter = 0;
   }
-  if (levelCounter == 100)
+  if (levelCounter == 300)
   {
     if (level < 5)
       level++;
@@ -158,7 +220,7 @@ void setup() {
       Serial.println("Received");
       BluetoothData1 = Bluetooth.read();
       if (BluetoothData1 == _start)
-        startGame();
+        startGame(0);
       break;
     }
     delay(10);
@@ -251,6 +313,31 @@ bool resetObject(byte &x, byte &y, char type)
     enemies[x].y = 254;
 }
 
+//byte getNewEnemyPosition()
+//{
+//
+//  bool free = false;
+//  int minimalDistance = 15;
+//  int index = 0;
+//  for (int i = 0; i < 8; i++)
+//    if (enemies[i].y == 254)
+//    {
+//      int difference = enemies[i].x - player.x;
+//      if (difference < 0)
+//        difference *= -1;
+//      if (difference < minimalDistance)
+//      {
+//        minimalDistance = difference;
+//        index = i;
+//      }
+//      free = true;
+//    }
+//  if (free == false)
+//    return 9;
+//
+//  return index;
+//}
+
 byte getNewEnemyPosition()
 {
 
@@ -272,7 +359,31 @@ byte getNewEnemyPosition()
     }
   if (free == false)
     return 9;
+    
+  bool done = false;
+  
+  if(offbeat == 2) {
+    int toAdd = 0;
+    if(index < 4) {
+      toAdd = 4;
+    }
+    else {
+      toAdd = 0;
+    }
+    int i = 0;
+    i = (rand() % 4) + 4;
+    if(i < 8 && i >= 0)
+      if (enemies[i].y == 254) {
+        index = i;
+        done = true;
+        offbeat = -1;
+      }
+    }
 
+  if(offbeat == 2 && done == false)
+    offbeat--;
+  
+  offbeat++;
   return index;
 }
 
@@ -345,14 +456,15 @@ void moveObject(byte &x, byte &y, char dir, char type) {
 
 
 void loop() {
+//  startGame();
 
   if (Bluetooth.available()) {
     Serial.println("Received");
     BluetoothData = Bluetooth.read();
     if (BluetoothData == _start)
-      startGame();
+      startGame(0);
     if (BluetoothData == _restart)
-      startGame();
+      startGame(1);
     if (BluetoothData == _pause)
       pause = true;
     if (BluetoothData == _continue)
